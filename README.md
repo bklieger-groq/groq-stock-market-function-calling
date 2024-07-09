@@ -1,6 +1,7 @@
 # Stock Market Analysis with Llama 3 Function Calling
 
 ![Demo Image](/demo_image.png)
+![Demo Image 2](/demo_image_2.png)
 
 Welcome to the Stock Market Analyst! This is a Streamlit web application that leverages the yfinance API to provide insights into stocks and their prices. The application uses the Llama 3 model on Groq in conjunction with Langchain to call functions based on the user prompt.
 
@@ -29,3 +30,8 @@ The function calling in this application is handled by the Groq API, abstracted 
 4. In the application, enter your question about a stock in the text input field. For example, "What is the current price of Google stock?" or "Show me the historical prices of Amazon and Tesla over the past year.".
 
 5. If you want to provide additional context for the language model, you can do so in the sidebar.
+
+
+## To-do
+
+1. Cache the financial data and optimize when calling yfinance

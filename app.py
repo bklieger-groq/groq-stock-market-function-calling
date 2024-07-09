@@ -13,16 +13,22 @@ import plotly.graph_objects as go
 import streamlit as st
 
 @tool
-def get_stock_info(symbol, key):
-    '''Return the correct stock info value given the appropriate symbol and key. Infer valid key from the user prompt; it must be one of the following:
+def get_all_stock_info(symbol):
+    '''Return the correct stock info value given the appropriate symbol. Returns the following:
 
     address1, city, state, zip, country, phone, website, industry, industryKey, industryDisp, sector, sectorKey, sectorDisp, longBusinessSummary, fullTimeEmployees, companyOfficers, auditRisk, boardRisk, compensationRisk, shareHolderRightsRisk, overallRisk, governanceEpochDate, compensationAsOfEpochDate, maxAge, priceHint, previousClose, open, dayLow, dayHigh, regularMarketPreviousClose, regularMarketOpen, regularMarketDayLow, regularMarketDayHigh, dividendRate, dividendYield, exDividendDate, beta, trailingPE, forwardPE, volume, regularMarketVolume, averageVolume, averageVolume10days, averageDailyVolume10Day, bid, ask, bidSize, askSize, marketCap, fiftyTwoWeekLow, fiftyTwoWeekHigh, priceToSalesTrailing12Months, fiftyDayAverage, twoHundredDayAverage, currency, enterpriseValue, profitMargins, floatShares, sharesOutstanding, sharesShort, sharesShortPriorMonth, sharesShortPreviousMonthDate, dateShortInterest, sharesPercentSharesOut, heldPercentInsiders, heldPercentInstitutions, shortRatio, shortPercentOfFloat, impliedSharesOutstanding, bookValue, priceToBook, lastFiscalYearEnd, nextFiscalYearEnd, mostRecentQuarter, earningsQuarterlyGrowth, netIncomeToCommon, trailingEps, forwardEps, pegRatio, enterpriseToRevenue, enterpriseToEbitda, 52WeekChange, SandP52WeekChange, lastDividendValue, lastDividendDate, exchange, quoteType, symbol, underlyingSymbol, shortName, longName, firstTradeDateEpochUtc, timeZoneFullName, timeZoneShortName, uuid, messageBoardId, gmtOffSetMilliseconds, currentPrice, targetHighPrice, targetLowPrice, targetMeanPrice, targetMedianPrice, recommendationMean, recommendationKey, numberOfAnalystOpinions, totalCash, totalCashPerShare, ebitda, totalDebt, quickRatio, currentRatio, totalRevenue, debtToEquity, revenuePerShare, returnOnAssets, returnOnEquity, freeCashflow, operatingCashflow, earningsGrowth, revenueGrowth, grossMargins, ebitdaMargins, operatingMargins, financialCurrency, trailingPegRatio
     
-    If asked generically for 'stock price', use currentPrice
     '''
+
     data = yf.Ticker(symbol)
     stock_info = data.info
-    return stock_info[key]
+
+    keys = list(stock_info.keys())
+    output = []
+    for key in keys:
+        output.append(f"{key}: {stock_info[key]}")
+
+    return '\n'.join(output)
 
 
 @tool
@@ -83,7 +89,7 @@ def plot_price_over_time(historical_price_dfs):
     st.plotly_chart(fig, use_container_width=True)
 
 def call_functions(llm_with_tools, user_prompt):
-    system_prompt = 'You are a helpful finance assistant that analyzes stocks and stock prices. Today is {today}'.format(today = date.today())
+    system_prompt = 'You are a helpful finance assistant that analyzes stocks and stock prices. Today is {today}. Use markdown formatting to structure outputs with headers and bullet points. Provide as much data and function-calling as possible while being relevant to the inquiry.'.format(today = date.today())
     
     messages = [SystemMessage(system_prompt), HumanMessage(user_prompt)]
     ai_msg = llm_with_tools.invoke(messages)
@@ -91,7 +97,7 @@ def call_functions(llm_with_tools, user_prompt):
     historical_price_dfs = []
     symbols = []
     for tool_call in ai_msg.tool_calls:
-        selected_tool = {"get_stock_info": get_stock_info, "get_historical_price": get_historical_price}[tool_call["name"].lower()]
+        selected_tool = {"get_all_stock_info": get_all_stock_info, "get_historical_price": get_historical_price}[tool_call["name"].lower()]
         tool_output = selected_tool.invoke(tool_call["args"])
         if tool_call['name'] == 'get_historical_price':
             historical_price_dfs.append(tool_output)
@@ -113,18 +119,18 @@ def main():
 
     llm = ChatGroq(groq_api_key = os.getenv('GROQ_API_KEY'),model = 'llama3-70b-8192')
     
-    tools = [get_stock_info, get_historical_price]
+    tools = [get_all_stock_info, get_historical_price]
     llm_with_tools = llm.bind_tools(tools)
 
     # Display the Groq logo
     spacer, col = st.columns([5, 1])  
-    with col:  
-        st.image('groqcloud_darkmode.png')
+    # with col:  
+    #     st.image('groqcloud_darkmode.png')
 
     # Display the title and introduction of the application
     st.title("Groqing the Stock Market with Llama3")
     multiline_text = """
-    Try to ask it "What is the current price of Meta stock?" or "Show me the historical prices of Apple vs Microsoft stock over the past 6 months.".
+    Try to ask it "What is the current price of Meta stock?" or "Show me the historical prices of Apple vs Microsoft stock over the past 6 months." or "What do you know about Apple's financial situation?".
     """
 
     st.markdown(multiline_text, unsafe_allow_html=True)
@@ -135,6 +141,7 @@ def main():
 
     # Get the user's question
     user_question = st.text_input("Ask a question about a stock or multiple stocks:")
+    st.markdown(f"<p style='font-size: 0.7em; color: #777777; padding-top: 0px;'>Any outputs should be used for education and entertainment only. LLMs may produce incorrect information.</p>", unsafe_allow_html=True)
 
     if user_question:
         response = call_functions(llm_with_tools, user_question)
