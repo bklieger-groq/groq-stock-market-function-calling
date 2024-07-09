@@ -71,10 +71,10 @@ def plot_price_over_time(historical_price_dfs):
             gridcolor='lightgrey',  # Set grid line color
         ),
         legend_title_text='Stock Symbol',
-        plot_bgcolor='gray',  # Set plot background to white
-        paper_bgcolor='gray',  # Set overall figure background to white
+        plot_bgcolor='black',  # Set plot background
+        paper_bgcolor='black',  # Set overall figure background
         legend=dict(
-            bgcolor='gray',  # Optional: Set legend background to white
+            bgcolor='black',
             bordercolor='black'
         )
     )
@@ -122,7 +122,7 @@ def main():
         st.image('groqcloud_darkmode.png')
 
     # Display the title and introduction of the application
-    st.title("Groqing the Stock Market with Llama 3")
+    st.title("Groqing the Stock Market with Llama3")
     multiline_text = """
     Try to ask it "What is the current price of Meta stock?" or "Show me the historical prices of Apple vs Microsoft stock over the past 6 months.".
     """
@@ -130,16 +130,17 @@ def main():
     st.markdown(multiline_text, unsafe_allow_html=True)
 
     # Add customization options to the sidebar
-    st.sidebar.title('Customization')
-    additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
+    # st.sidebar.title('Customization')
+    # additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
 
     # Get the user's question
     user_question = st.text_input("Ask a question about a stock or multiple stocks:")
 
     if user_question:
         response = call_functions(llm_with_tools, user_question)
-        st.write(response)
 
+        with st.chat_message("assistant", avatar="⚡"):
+            st.write(response)
 
 
 if __name__ == "__main__":
