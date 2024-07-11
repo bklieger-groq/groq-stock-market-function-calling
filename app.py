@@ -117,13 +117,8 @@ def call_functions(llm_with_tools, user_prompt):
 
 def main():
 
-    llm = ChatGroq(groq_api_key = os.getenv('GROQ_API_KEY'),model = 'llama3-70b-8192')
-    
-    tools = [get_all_stock_info, get_historical_price]
-    llm_with_tools = llm.bind_tools(tools)
-
     # Display the Groq logo
-    spacer, col = st.columns([5, 1])  
+    # spacer, col = st.columns([5, 1])  
     # with col:  
     #     st.image('groqcloud_darkmode.png')
 
@@ -135,6 +130,11 @@ def main():
 
     st.markdown(multiline_text, unsafe_allow_html=True)
 
+    if not os.getenv('GROQ_API_KEY'):
+        groq_input_key = st.text_input(
+            "Enter your Groq API Key (gsk_yA...):", "", type="password"
+        )
+    
     # Add customization options to the sidebar
     # st.sidebar.title('Customization')
     # additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
@@ -144,7 +144,15 @@ def main():
     st.markdown(f"<p style='font-size: 0.7em; color: #777777; padding-top: 0px;'>Any outputs should be used for education and entertainment only. LLMs may produce incorrect information.</p>", unsafe_allow_html=True)
 
     if user_question:
-        response = call_functions(llm_with_tools, user_question)
+        # Set ChatGroq using API key provided by user
+        if os.getenv('GROQ_API_KEY'):
+            groq_llm = ChatGroq(groq_api_key = os.getenv('GROQ_API_KEY'),model = 'llama3-70b-8192')        
+        else:
+            groq_llm = ChatGroq(groq_api_key = groq_input_key,model = 'llama3-70b-8192')
+        tools = [get_all_stock_info, get_historical_price]
+        groq_llm = groq_llm.bind_tools(tools)
+
+        response = call_functions(groq_llm, user_question)
 
         with st.chat_message("assistant", avatar="⚡"):
             st.write(response)
